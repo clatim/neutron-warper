@@ -8,12 +8,12 @@ from warp.optim.linear import cg
 from IPython import embed
 from dataclasses import dataclass
 import pyvista
+import reader
 
 @dataclass(kw_only=True)
 class NeutronDiffusion():
     nx: int
     ny: int
-    source_strength: float
     xlen: float
     ylen: float
     alpha: float # Albedo of boundaries
@@ -23,12 +23,13 @@ class NeutronDiffusion():
 class CrosssectionFields():
     D: fem.Field
     sigt: fem.Field
+    fixed_source: fem.Field
 
 @dataclass(kw_only=True)
 class Material():
     sigt: float
     D: float # The diffusion coefficient
-
+    fixed_source: float
 
 
 @fem.integrand
@@ -37,9 +38,9 @@ def integrate_flux(s: fem.Sample, domain: fem.Domain, solution: fem.Field, trial
     return trial_function(s) * solution(s)
 
 @fem.integrand
-def source_term(s: fem.Sample, domain: fem.Domain, test_function: fem.Field, source_strength: float):
+def source_term(s: fem.Sample, domain: fem.Domain, test_function: fem.Field, S: fem.Field):
 
-    return source_strength * test_function(s)
+    return S(s) * test_function(s)
 
 @fem.integrand
 def diffusion_bilinear_form(s: fem.Sample, domain: fem.Domain, trial_function: fem.Field, test_function: fem.Field, D: fem.Field, sigt: fem.Field):
@@ -69,10 +70,10 @@ def setup_functionspace(geo, degree=2):
     functionspace = fem.make_polynomial_space(geo, degree=degree)
     return functionspace
 
-def integrate_linear_form(problem: NeutronDiffusion, func_space: fem.FunctionSpace, domain: fem.Domain, linear_form):
+def integrate_linear_form(problem: NeutronDiffusion, func_space: fem.FunctionSpace, domain: fem.Domain, linear_form, xsec_data: CrosssectionFields):
 
     test = fem.make_test(space=func_space, domain=domain)
-    rhs = fem.integrate(linear_form, fields={"test_function": test}, values={"source_strength": problem.source_strength})
+    rhs = fem.integrate(linear_form, fields={"test_function": test, "S": xsec_data.fixed_source})
     return rhs
 
 def integrate_bilinear_form(problem: NeutronDiffusion, geo: fem.Geometry, func_space: fem.FunctionSpace, domain: fem.Domain, xsec_data: CrosssectionFields):
@@ -123,27 +124,30 @@ def create_material_field(problem: NeutronDiffusion, property: str, material_ids
 
     return material_field
 
-def define_problem():
+def define_problem(filename):
     """ Defines the problem.
-
-    Should probably not hard code this but will do for now.
     """
-    mat1 = Material(
-        D=1,
-        sigt=1.0,
-    )
-    mat2 = Material(
-        D=1,
-        sigt=2,
-    )
+
+    problem_def = reader.read_problem(filename)
+
+    mat_list = []
+    for name, mat in problem_def["materials"].items():
+        mat_list.append(
+            Material(
+                D=mat["D"],
+                sigt=mat["sigt"],
+                fixed_source=mat.get("fixed_source", 0.0),
+            )
+        )
+
+
     problem = NeutronDiffusion(
-        nx=2,
-        ny=2,
-        source_strength=1,
-        xlen=1,
-        ylen=1,
+        nx=problem_def.mesh.nx,
+        ny=problem_def.mesh.ny,
+        xlen=problem_def.mesh.xlen,
+        ylen=problem_def.mesh.ylen,
         alpha=1.0,
-        materials=(mat1, mat2),
+        materials=mat_list,
     )
 
     return problem
@@ -157,11 +161,14 @@ if __name__ == "__main__":
         help="Plots the solution using vtk libraries",
         action="store_true",
     )
+    parser.add_argument(
+        'input_file'
+    )
     args = parser.parse_args()
 
     wp.init()
     wp.set_device("cpu")
-    problem = define_problem()
+    problem = define_problem(args.input_file)
 
     geo = setup_geometry(problem)
     ct = geo.cell_count()
@@ -174,11 +181,12 @@ if __name__ == "__main__":
 
     D: fem.Field = create_material_field(problem, "D", material_ids)
     sigt: fem.Field = create_material_field(problem, "sigt", material_ids)
-    xsec_data = CrosssectionFields(D, sigt)
+    fixed_source: fem.Field = create_material_field(problem, "fixed_source", material_ids)
+    xsec_data = CrosssectionFields(D, sigt, fixed_source)
 
     func_space = setup_functionspace(geo)
     domain = setup_integration_domain(geo)
-    rhs = integrate_linear_form(problem, func_space, domain, linear_form=source_term)
+    rhs = integrate_linear_form(problem, func_space, domain, linear_form=source_term, xsec_data=xsec_data)
     matrix = integrate_bilinear_form(problem, geo, func_space, domain, xsec_data)
     x = solve_ax_b(A=matrix, b=rhs)
     print(x)

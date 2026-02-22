@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "ipython>=9.10.0",
+    "omegaconf>=2.3.0",
     "pyvista>=0.47.0",
     "warp-lang>=1.11.1",
 ]

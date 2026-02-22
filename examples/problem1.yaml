@@ -1,0 +1,14 @@
+materials:
+  1:
+    D: 1.0
+    sigt: 1.0
+  2:
+    D: 1.0
+    sigt: 1.0
+    fixed_source: 1.0
+
+mesh:
+  nx: 2
+  ny: 2
+  xlen: 1
+  ylen: 1

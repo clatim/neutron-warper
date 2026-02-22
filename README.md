@@ -27,4 +27,4 @@ which gives the following steps:
 
 - [ ] Try it on a GPU
 
-- [ ] Add in input files. Maybe try OmegaConf?
+- [x] Add in input files. Maybe try OmegaConf?
