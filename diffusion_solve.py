@@ -1,24 +1,5 @@
-"""
-    I want to try and solve the neutron diffusion equation using warp.
-
-    There is an example of solving the 2d and 3d diffusion equations [here](https://github.com/NVIDIA/warp/blob/main/warp/examples/fem/example_diffusion.py)
-    but I will only use this as a reference for now.
-
-    To get this done I am going to follow the basic workflow suggested [here](https://nvidia.github.io/warp/domain_modules/fem.html#basic-workflow)
-    which gives the following steps:
-
-    - [x] Define a `Geometry`.
-        - See `setup_geometry`
-    - [x] Define a `FunctionSpace`.
-        - See `setup_functionspace`
-    - [x] Define an integration domain.
-        - See `setup_integration_domain`
-    - [x] Integrate linear forms to get source terms $b$.
-        - See `integrate_linear_form`.
-    - [x] Integrate bilinear forms to build the system of linear equations $A$.
-    - [x] Solve $Ax = b$
-
-"""
+import math
+import argparse
 import warp as wp
 import numpy as np
 import warp.fem as fem
@@ -32,12 +13,22 @@ import pyvista
 class NeutronDiffusion():
     nx: int
     ny: int
-    D: float # The diffusion coefficient
-    sigt: float
     source_strength: float
     xlen: float
     ylen: float
     alpha: float # Albedo of boundaries
+    materials: List[Material]
+
+@dataclass
+class CrosssectionFields():
+    D: fem.Field
+    sigt: fem.Field
+
+@dataclass(kw_only=True)
+class Material():
+    sigt: float
+    D: float # The diffusion coefficient
+
 
 
 @fem.integrand
@@ -51,18 +42,16 @@ def source_term(s: fem.Sample, domain: fem.Domain, test_function: fem.Field, sou
     return source_strength * test_function(s)
 
 @fem.integrand
-def diffusion_bilinear_form(s: fem.Sample, domain: fem.Domain, trial_function: fem.Field, test_function: fem.Field, D: float, sigt: float):
+def diffusion_bilinear_form(s: fem.Sample, domain: fem.Domain, trial_function: fem.Field, test_function: fem.Field, D: fem.Field, sigt: fem.Field):
 
-    pos = domain(s)
-    return D * wp.dot(
+    return D(s) * wp.dot(
         fem.grad(test_function, s),
         fem.grad(trial_function, s),
-    ) + sigt * test_function(s) * trial_function(s)
+    ) + sigt(s) * test_function(s) * trial_function(s)
 
 @fem.integrand
-def diffusion_boundary_bilinear_form(s: fem.Sample, domain: fem.Domain, trial_function: fem.Field, test_function: fem.Field, D: float, sigt: float, alpha: float):
+def diffusion_boundary_bilinear_form(s: fem.Sample, domain: fem.Domain, trial_function: fem.Field, test_function: fem.Field, alpha: float):
 
-    # return 3.0 / 2.0 * sigt * D * test_function(s) * trial_function(s)
     return 1.0 / 2.0 * (alpha - 1.0) / (alpha + 1.0) * test_function(s) * trial_function(s)
 
 def setup_integration_domain(geo):
@@ -86,7 +75,7 @@ def integrate_linear_form(problem: NeutronDiffusion, func_space: fem.FunctionSpa
     rhs = fem.integrate(linear_form, fields={"test_function": test}, values={"source_strength": problem.source_strength})
     return rhs
 
-def integrate_bilinear_form(problem: NeutronDiffusion, geo: fem.Geometry, func_space: fem.FunctionSpace, domain: fem.Domain):
+def integrate_bilinear_form(problem: NeutronDiffusion, geo: fem.Geometry, func_space: fem.FunctionSpace, domain: fem.Domain, xsec_data: CrosssectionFields):
 
     boundary = fem.BoundarySides(geo)
     bd_test = fem.make_test(space=func_space, domain=boundary)
@@ -98,14 +87,12 @@ def integrate_bilinear_form(problem: NeutronDiffusion, geo: fem.Geometry, func_s
             "trial_function": bd_trial,
         }, 
         values={
-            "D": problem.D, 
-            "sigt": problem.sigt,
             "alpha": problem.alpha,
         })
 
     test = fem.make_test(space=func_space, domain=domain)
     trial = fem.make_trial(space=func_space, domain=domain)
-    matrix = fem.integrate(diffusion_bilinear_form, domain=domain, fields={"test_function": test, "trial_function": trial}, values={"D": problem.D, "sigt": problem.sigt})
+    matrix = fem.integrate(diffusion_bilinear_form, domain=domain, fields={"test_function": test, "trial_function": trial, "sigt": xsec_data.sigt, "D": xsec_data.D})
 
     bsr_axpy(x=bd_matrix, y=matrix, alpha=-1, beta=1)
 
@@ -117,46 +104,103 @@ def solve_ax_b(A, b):
     print(f"{final_it = }, {resid_norm = }, {abs_tol = }")
     return x
 
+def create_material_field(problem: NeutronDiffusion, property: str, material_ids) -> fem.Field:
+    """ Creates a fem.Field as is needed by Warp of a given property.
+
+    Uses material mappings from cells to Materials stored in NeutronDiffusion.
+    """
+
+    material_values = []
+    for id in material_ids:
+        material_values.append(
+            getattr(problem.materials[id], property)
+        )
+
+    material_values = np.array(material_values)
+    material_function_space = fem.make_polynomial_space(geo, degree=0, discontinuous=True)
+    material_field = material_function_space.make_field()
+    material_field.dof_values = wp.from_numpy(material_values, dtype=float)
+
+    return material_field
+
+def define_problem():
+    """ Defines the problem.
+
+    Should probably not hard code this but will do for now.
+    """
+    mat1 = Material(
+        D=1,
+        sigt=1.0,
+    )
+    mat2 = Material(
+        D=1,
+        sigt=2,
+    )
+    problem = NeutronDiffusion(
+        nx=2,
+        ny=2,
+        source_strength=1,
+        xlen=1,
+        ylen=1,
+        alpha=1.0,
+        materials=(mat1, mat2),
+    )
+
+    return problem
+
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--plot', 
+        help="Plots the solution using vtk libraries",
+        action="store_true",
+    )
+    args = parser.parse_args()
+
     wp.init()
     wp.set_device("cpu")
-    problem = NeutronDiffusion(
-        nx=20,
-        ny=20,
-        source_strength=1,
-        D=1,
-        sigt=1.0,
-        xlen=1,
-        ylen=1,
-        alpha=0.0,
-    )
-    MAGIC_VACCUM = 0.7104 * 1 / problem.sigt # For extrapolated boundary
+    problem = define_problem()
+
     geo = setup_geometry(problem)
+    ct = geo.cell_count()
+    # Set material Ids
+    material_id = [0 for _ in range(ct)]
+    for i in range(math.floor(ct/2)):
+        material_id[i] = 1
+    material_ids = np.array(material_id, dtype=int)
+
+
+    D: fem.Field = create_material_field(problem, "D", material_ids)
+    sigt: fem.Field = create_material_field(problem, "sigt", material_ids)
+    xsec_data = CrosssectionFields(D, sigt)
+
     func_space = setup_functionspace(geo)
     domain = setup_integration_domain(geo)
     rhs = integrate_linear_form(problem, func_space, domain, linear_form=source_term)
-    matrix = integrate_bilinear_form(problem, geo, func_space, domain)
+    matrix = integrate_bilinear_form(problem, geo, func_space, domain, xsec_data)
     x = solve_ax_b(A=matrix, b=rhs)
-    field = func_space.make_field()
-
-    # Extract cells, nodes and values
-    cells, types = field.space.vtk_cells()
-    nodes = field.space.node_positions().numpy()
-    values = field.dof_values.numpy()
-    positions = np.hstack((nodes, values[:, np.newaxis]))
-
-    # Visualise with pyvista
-    grid = pyvista.UnstructuredGrid(cells, types, positions)
-    # Normalise really badly
-    # x = x.numpy()
-    # x = x / x[0]
     print(x)
-    grid.point_data["scalars"] = x
-    plotter = pyvista.Plotter()
-    plotter.add_mesh(grid)
-    plotter.show()
+
+    if args.plot:
+        field = func_space.make_field()
+        # Extract cells, nodes and values
+        cells, types = field.space.vtk_cells()
+        nodes = field.space.node_positions().numpy()
+        values = field.dof_values.numpy()
+        positions = np.hstack((nodes, values[:, np.newaxis]))
+
+        # Visualise with pyvista
+        grid = pyvista.UnstructuredGrid(cells, types, positions)
+        # Normalise really badly
+        # x = x.numpy()
+        # x = x / x[0]
+        print(x)
+        grid.point_data["scalars"] = x
+        plotter = pyvista.Plotter()
+        plotter.add_mesh(grid)
+        plotter.show()
 
 
 
