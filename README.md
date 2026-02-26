@@ -23,8 +23,11 @@ which gives the following steps:
 
 - [ ] Set up boundary specific boundary conditions.
 
-    This is probably similar to how the material fields have been set up
+    This is probably similar to how the material fields have been set up but could make it independent of the material so that it is uniform over a given side.
 
-- [ ] Try it on a GPU
+- [x] Try it on a GPU (for reference the GPU is used is a GeForce RTX 4060)
+    - [ ] Check integral of solution between `--device=cpu` and `--device=cuda:0`
 
 - [x] Add in input files. Maybe try OmegaConf?
+
+- [ ] Add problem dependent material assignment

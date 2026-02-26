@@ -101,7 +101,7 @@ def integrate_bilinear_form(problem: NeutronDiffusion, geo: fem.Geometry, func_s
 
 def solve_ax_b(A, b):
     x = wp.zeros_like(b)
-    final_it, resid_norm, abs_tol = cg(A, b, x=x, maxiter=100, tol=1e-6, check_every=1)
+    final_it, resid_norm, abs_tol = cg(A, b, x=x, maxiter=10000, tol=1e-8, check_every=10)
     print(f"{final_it = }, {resid_norm = }, {abs_tol = }")
     return x
 
@@ -162,20 +162,28 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument(
-        'input_file'
+        'input_file',
     )
+    parser.add_argument(
+            '--device',
+            help=(
+                "The default device that warp will use. "
+                f"The list of available devices is {wp.get_devices()}"
+                ),
+            default='cpu',
+            )
     args = parser.parse_args()
 
     wp.init()
-    wp.set_device("cpu")
+    wp.set_device(args.device)
     problem = define_problem(args.input_file)
 
     geo = setup_geometry(problem)
     ct = geo.cell_count()
     # Set material Ids
-    material_id = [0 for _ in range(ct)]
-    for i in range(math.floor(ct/2)):
-        material_id[i] = 1
+    material_id = [1 for _ in range(ct)]
+    # for i in range(math.floor(ct/2)):
+    #     material_id[i] = 1
     material_ids = np.array(material_id, dtype=int)
 
 
@@ -189,7 +197,7 @@ if __name__ == "__main__":
     rhs = integrate_linear_form(problem, func_space, domain, linear_form=source_term, xsec_data=xsec_data)
     matrix = integrate_bilinear_form(problem, geo, func_space, domain, xsec_data)
     x = solve_ax_b(A=matrix, b=rhs)
-    print(x)
+    print("Solution": x)
 
     if args.plot:
         field = func_space.make_field()

@@ -8,7 +8,7 @@ materials:
     fixed_source: 1.0
 
 mesh:
-  nx: 2
-  ny: 2
+  nx: 20
+  ny: 20
   xlen: 1
   ylen: 1
