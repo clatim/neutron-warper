@@ -1,3 +1,9 @@
+# How to run
+
+`uv run nwarper --help` to see command line args 
+
+`uv run nwarper` to run
+
 # Motivation
 
 I want to try and solve the neutron diffusion equation using warp.
@@ -21,9 +27,11 @@ which gives the following steps:
 
 # Todo
 
-- [ ] Set up boundary specific boundary conditions.
+- [x] Set up boundary specific boundary conditions.
 
     This is probably similar to how the material fields have been set up but could make it independent of the material so that it is uniform over a given side.
+
+    Ended up being just using normals
 
 - [x] Try it on a GPU (for reference the GPU is used is a GeForce RTX 4060)
     - [ ] Check integral of solution between `--device=cpu` and `--device=cuda:0`

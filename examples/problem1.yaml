@@ -1,8 +1,8 @@
 materials:
-  1:
+  '0':
     D: 1.0
     sigt: 1.0
-  2:
+  '1':
     D: 1.0
     sigt: 1.0
     fixed_source: 1.0
@@ -10,5 +10,12 @@ materials:
 mesh:
   nx: 20
   ny: 20
+
+domain:
   xlen: 1
   ylen: 1
+  boundary_conditions:
+    xmin: 0
+    xmax: 0
+    ymin: 0
+    ymax: 1
