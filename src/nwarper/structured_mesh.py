@@ -3,7 +3,7 @@ from nwarper.mixins import Printable
 
 
 def build_axis(blocks):
-    """ Given input like
+    """Given input like
 
     build_axis([0, 0.5, 2], [0.5, 1.0, 4])
 
@@ -19,8 +19,8 @@ def build_axis(blocks):
 
     return np.array(coords)
 
-class StructuredMesh(Printable):
 
+class StructuredMesh(Printable):
     def __init__(self, x_nodes, y_nodes):
         self.x = x_nodes
         self.y = y_nodes
@@ -33,7 +33,7 @@ class StructuredMesh(Printable):
         self.ny = len(self.yc)
 
         # Make the mesh
-        self.Xc,  self.Yc = np.meshgrid(self.xc, self.yc, indexing="ij")
+        self.Xc, self.Yc = np.meshgrid(self.xc, self.yc, indexing="ij")
 
     @classmethod
     def from_config(cls, cfg):

@@ -5,7 +5,8 @@ from nwarper.neutronproblem import NeutronProblem
 
 from nwarper.config_schema import Config
 from nwarper.region_builder import build_regions
-    
+
+
 def read_problem(file):
     schema = OmegaConf.structured(Config)
     cfg = OmegaConf.load(file)
