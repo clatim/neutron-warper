@@ -1,0 +1,25 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  release:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - name: Install commitizen
+        run: pip install commitizen
+      - name: Bump version
+        run: cz bump --yes
+      - name: Push changes
+        run: |
+          git push
+          git push --tags
