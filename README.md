@@ -36,6 +36,10 @@ which gives the following steps:
 - [x] Try it on a GPU (for reference the GPU is used is a GeForce RTX 4060)
     - [ ] Check integral of solution between `--device=cpu` and `--device=cuda:0`
 
-- [x] Add in input files. Maybe try OmegaConf?
+- [x] Add in input files. Maybe try `OmegaConf`?
 
-- [ ] Add problem dependent material assignment
+- [x] Add problem dependent material assignment
+
+- [ ] Integrate `hyrda` with `OmegaConf` for parametrised runs
+
+- [x] Look at adding better meshing.

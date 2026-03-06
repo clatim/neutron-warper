@@ -1,5 +1,5 @@
-import math
 import argparse
+from nwarper.structured_mesh import StructuredMesh
 import warp as wp
 import numpy as np
 import warp.fem as fem
@@ -10,7 +10,6 @@ import pyvista
 from nwarper.material import create_material_field
 import nwarper.reader
 from nwarper.neutronproblem import NeutronProblem
-from nwarper.mesh import Mesh
 
 @dataclass
 class CrosssectionFields():
@@ -60,7 +59,7 @@ def setup_integration_domain(geo):
     domain = fem.Cells(geo)
     return domain
 
-def setup_geometry(problem: NeutronProblem, mesh: Mesh):
+def setup_geometry(problem: NeutronProblem, mesh: StructuredMesh):
 
     geo = fem.Grid2D(res=(mesh.nx, mesh.ny), bounds_hi=(problem.xlen, problem.ylen))
     return geo
@@ -132,17 +131,10 @@ def main() -> None:
 
     wp.init()
     wp.set_device(args.device)
-    problem, materials, mesh = nwarper.reader.read_problem(args.input_file)
+    problem, mesh, materials, regions, material_ids = nwarper.reader.read_problem(args.input_file)
 
     geo = setup_geometry(problem, mesh)
-    ct = geo.cell_count()
-    # Set material Ids
-    material_ids = ['0' for _ in range(ct)]
-    for i in range(math.floor(ct/2)):
-        material_ids[i] = '1'
 
-
-    print(type(geo))
     D: fem.Field = create_material_field(materials, geo, "D", material_ids)
     sigt: fem.Field = create_material_field(materials, geo, "sigt", material_ids)
     fixed_source: fem.Field = create_material_field(materials, geo, "fixed_source", material_ids)
