@@ -1,4 +1,5 @@
 import argparse
+import sys
 from nwarper.structured_mesh import StructuredMesh
 import numpy as np
 import warp as wp
@@ -9,7 +10,7 @@ import nwarper.reader
 from nwarper.neutronproblem import NeutronProblem
 from nwarper.cross_section_fields import CrossSectionFields
 from nwarper.warp_helper import create_fem_field, setup_functionspace
-from nwarper.plotting import visualise_solution
+from nwarper.plotting import visualise_solution, visualise_materials
 
 
 def calculate_norm(x):
@@ -154,8 +155,13 @@ def main() -> None:
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--plot",
+        "--plot-solution",
         help="Plots the solution using vtk libraries",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--plot-geometry",
+        help="Plots the geometry using plotly then exits",
         action="store_true",
     )
     parser.add_argument(
@@ -176,6 +182,10 @@ def main() -> None:
     settings, problem, mesh, materials, regions, material_ids = (
         nwarper.reader.read_problem(args.input_file)
     )
+    if args.plot_geometry:
+        print("Plotting geometry and exiting")
+        visualise_materials(material_ids)
+        sys.exit()
 
     geo = setup_geometry(problem, mesh)
 
@@ -229,5 +239,5 @@ def main() -> None:
 
     print("Solution", phi)
 
-    if args.plot:
+    if args.plot_solution:
         visualise_solution(solution=phi, func_space=func_space)

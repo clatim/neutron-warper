@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "omegaconf>=2.3.0",
+    "plotly>=6.6.0",
     "pyvista>=0.47.0",
     "warp-lang>=1.11.1",
 ]

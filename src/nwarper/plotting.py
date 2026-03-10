@@ -1,6 +1,12 @@
 import warp.fem as fem
 import numpy as np
 import pyvista
+import plotly.express as px
+
+
+def visualise_materials(material_ids):
+    fig = px.imshow(material_ids)
+    fig.show()
 
 
 def visualise_solution(solution, func_space: fem.FunctionSpace):
