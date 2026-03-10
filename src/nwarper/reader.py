@@ -5,6 +5,7 @@ from nwarper.neutronproblem import NeutronProblem
 
 from nwarper.config_schema import Config
 from nwarper.region_builder import build_regions
+from nwarper.settings import Settings
 
 
 def read_problem(file):
@@ -29,4 +30,6 @@ def read_problem(file):
 
     material_field = build_material_field(mesh, regions)
 
-    return domain, mesh, materials, regions, material_field
+    settings = Settings(**cfg.settings)
+
+    return settings, domain, mesh, materials, regions, material_field

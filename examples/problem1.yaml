@@ -1,5 +1,9 @@
 # A simple homogeneous square with all reflective boundaries
 
+settings:
+  problem_type: "fixed"
+  convergence_criteria: 1e-5
+
 domain:
   size: [1, 1]
   boundary_conditions:

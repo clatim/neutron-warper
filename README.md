@@ -27,19 +27,26 @@ which gives the following steps:
 
 # Todo
 
-- [x] Set up boundary specific boundary conditions.
-
-    This is probably similar to how the material fields have been set up but could make it independent of the material so that it is uniform over a given side.
-
-    Ended up being just using normals
-
 - [x] Try it on a GPU (for reference the GPU is used is a GeForce RTX 4060)
     - [ ] Check integral of solution between `--device=cpu` and `--device=cuda:0`
+    - [ ] Add tests for fixed problem
+
+
+- [ ] Integrate `hyrda` with `OmegaConf` for parametrised runs
+
+- [x] Add in keff solve
+    - [ ] Add some tests for this
+
+# Done
 
 - [x] Add in input files. Maybe try `OmegaConf`?
 
 - [x] Add problem dependent material assignment
 
-- [ ] Integrate `hyrda` with `OmegaConf` for parametrised runs
-
 - [x] Look at adding better meshing.
+
+- [x] Set up boundary specific boundary conditions.
+
+    This is probably similar to how the material fields have been set up but could make it independent of the material so that it is uniform over a given side.
+
+    Ended up being just using normals

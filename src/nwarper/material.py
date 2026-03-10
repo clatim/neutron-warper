@@ -1,8 +1,7 @@
-from dataclasses import dataclass
 import warp.fem as fem
 import numpy as np
-import warp as wp
 from nwarper.mixins import Printable
+from nwarper.warp_helper import create_fem_field
 
 
 class MaterialConfiguration(Printable):
@@ -20,11 +19,20 @@ class MaterialConfiguration(Printable):
         return self.id_map[name]
 
 
-@dataclass(kw_only=True)
 class Material(Printable):
-    sigt: float
-    D: float  # The diffusion coefficient
-    fixed_source: float = 0
+    def __init__(self, sigt, sigf=0, sigs=0, D=None, fixed_source=0, chi=0, nu=0):
+        self.sigt = sigt
+        self.sigf = sigf
+        self.sigs = sigs
+        if D:
+            self.D = D
+        else:
+            self.D = 1 / (3 * sigt)
+        self.fixed_source = fixed_source
+        self.chi = chi
+        self.nu = nu
+
+        self.sigr = sigt - sigs
 
 
 def create_material_field(
@@ -40,13 +48,7 @@ def create_material_field(
         material_values.append(getattr(materials.materials[int(id)], property))
 
     material_values = np.array(material_values)
-    material_function_space = fem.make_polynomial_space(
-        geometry, degree=0, discontinuous=True
-    )
-    material_field = material_function_space.make_field()
-    material_field.dof_values = wp.from_numpy(material_values, dtype=float)
-
-    return material_field
+    return create_fem_field(geometry, material_values)
 
 
 def build_material_field(mesh, regions):

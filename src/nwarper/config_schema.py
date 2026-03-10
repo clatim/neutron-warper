@@ -8,6 +8,11 @@ class ValidRegions(Enum):
     circle = 1
 
 
+class ValidProblemType(Enum):
+    criticality = 0
+    fixed = 1
+
+
 @dataclass
 class AxisSpacing:
     spacing: List[List[float]]
@@ -29,9 +34,13 @@ class BoundaryConditions:
 
 @dataclass
 class MaterialConfig:
-    D: float
     sigt: float
+    D: float | None = 0.0
+    sigf: float | None = 0.0
+    sigs: float | None = 0.0
     fixed_source: float | None = 0.0
+    chi: float | None = 0.0
+    nu: float | None = 0.0
 
 
 @dataclass
@@ -50,7 +59,14 @@ class RegionConfig:
 
 
 @dataclass
+class SettingsConfig:
+    problem_type: ValidProblemType
+    convergence_criteria: float
+
+
+@dataclass
 class Config:
+    settings: SettingsConfig
     domain: DomainConfig
     mesh: MeshConfig
     materials: Dict[str, MaterialConfig]
