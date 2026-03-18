@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.scripts]
-nwarper = "nwarper.diffusion_solve:main"
+nwarper = "nwarper.nwarper:main"
 
 [build-system]
 requires = ["uv_build>=0.10.7,<0.11.0"]
@@ -28,6 +28,7 @@ major_version_zero = true
 
 [dependency-groups]
 dev = [
+    "hypothesis>=6.151.9",
     "ipython>=9.10.0",
     "pytest>=9.0.2",
     "ruff>=0.15.5",

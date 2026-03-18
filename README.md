@@ -32,7 +32,7 @@ which gives the following steps:
     - [ ] Add tests for fixed problem
 
 
-- [ ] Integrate `hyrda` with `OmegaConf` for parametrised runs
+- [ ] Integrate `hydra` with `OmegaConf` for parametrised runs
 
 - [x] Add in keff solve
     - [ ] Add some tests for this

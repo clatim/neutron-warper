@@ -1,0 +1,33 @@
+# A simple homogeneous square with all reflective boundaries
+
+settings:
+  problem_type: "fixed"
+  convergence_criteria: 1e-5
+
+domain:
+  size: [1, 1]
+  boundary_conditions:
+    xmin: 1
+    xmax: 1
+    ymin: 1
+    ymax: 1
+
+mesh:
+  x: 
+    spacing: 
+      - [0.0, 1.0, 0.25]
+
+  y: 
+    spacing: 
+      - [0.0, 1.0, 0.25]
+
+materials:
+  mat1:
+    D: 1.0
+    sigt: 1.0
+    fixed_source: 1.0
+
+regions:
+  - shape: box
+    bounds: [0, 0, 1, 1]
+    material: mat1 

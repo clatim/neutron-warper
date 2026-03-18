@@ -1,4 +1,3 @@
-import argparse
 import sys
 from nwarper.structured_mesh import StructuredMesh
 import numpy as np
@@ -151,38 +150,14 @@ def solve_ax_b(A, b, x):
     return x
 
 
-def main() -> None:
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--plot-solution",
-        help="Plots the solution using vtk libraries",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--plot-geometry",
-        help="Plots the geometry using plotly then exits",
-        action="store_true",
-    )
-    parser.add_argument(
-        "input_file",
-    )
-    parser.add_argument(
-        "--device",
-        help=(
-            "The default device that warp will use. "
-            f"The list of available devices is {wp.get_devices()}"
-        ),
-        default="cpu",
-    )
-    args = parser.parse_args()
+def diffusion_solve(input_file, plot_solution=False, plot_geometry=False, device="cpu"):
 
     wp.init()
-    wp.set_device(args.device)
+    wp.set_device(device)
     settings, problem, mesh, materials, regions, material_ids = (
-        nwarper.reader.read_problem(args.input_file)
+        nwarper.reader.read_problem(input_file)
     )
-    if args.plot_geometry:
+    if plot_geometry:
         print("Plotting geometry and exiting")
         visualise_materials(material_ids)
         sys.exit()
@@ -239,5 +214,7 @@ def main() -> None:
 
     print("Solution", phi)
 
-    if args.plot_solution:
+    if plot_solution:
         visualise_solution(solution=phi, func_space=func_space)
+
+    return phi.numpy()
