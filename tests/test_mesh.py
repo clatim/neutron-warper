@@ -14,5 +14,5 @@ def test_axis_generation():
 
     x = build_axis(blocks)
 
-    assert x[0] == 0
-    assert x[-1] == 1.1
+    assert x[0] == blocks[0][0]
+    assert x[-1] == blocks[-1][1]

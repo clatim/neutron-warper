@@ -1,4 +1,5 @@
 import sys
+import h5py
 from nwarper.structured_mesh import StructuredMesh
 import numpy as np
 import warp as wp
@@ -150,12 +151,19 @@ def solve_ax_b(A, b, x):
     return x
 
 
-def diffusion_solve(input_file, plot_solution=False, plot_geometry=False, device="cpu"):
+def diffusion_solve(
+    input_file,
+    output_file=None,
+    plot_solution=False,
+    plot_geometry=False,
+    device="cpu",
+    overrides=None,
+):
 
     wp.init()
     wp.set_device(device)
     settings, problem, mesh, materials, regions, material_ids = (
-        nwarper.reader.read_problem(input_file)
+        nwarper.reader.read_problem(input_file, overrides)
     )
     if plot_geometry:
         print("Plotting geometry and exiting")
@@ -176,13 +184,15 @@ def diffusion_solve(input_file, plot_solution=False, plot_geometry=False, device
     matrix = integrate_bilinear_form(problem, geo, func_space, domain, xsec_data)
     phi = wp.ones_like(fixed_source)
 
-    if settings.problem_type == "fixed":
+    criticality_problem = settings.problem_type == "criticality"
+
+    if not criticality_problem:
         phi = solve_ax_b(A=matrix, b=fixed_source, x=phi)
     else:
         fission_source = wp.ones_like(fixed_source)
         change = float("inf")
         outer_it = 0
-        convergence_criteria = 1e-5
+        convergence_criteria = settings.convergence_criteria
         lamb = 1.0
 
         converged = False
@@ -212,9 +222,11 @@ def diffusion_solve(input_file, plot_solution=False, plot_geometry=False, device
             if change < convergence_criteria:
                 converged = True
 
-    print("Solution", phi)
+    if output_file:
+        with h5py.File(output_file, "w") as h:
+            h["flux"] = phi
+            if criticality_problem:
+                h["keff"] = lamb
 
     if plot_solution:
         visualise_solution(solution=phi, func_space=func_space)
-
-    return phi.numpy()

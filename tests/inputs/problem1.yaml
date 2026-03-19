@@ -23,7 +23,6 @@ mesh:
 
 materials:
   mat1:
-    D: 1.0
     sigt: 1.0
     fixed_source: 1.0
 

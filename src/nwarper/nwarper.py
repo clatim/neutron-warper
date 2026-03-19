@@ -19,6 +19,12 @@ def main() -> None:
     parser.add_argument(
         "input_file",
     )
+
+    parser.add_argument(
+        "--output-file",
+        help="The hdf5 file to output to",
+        type=str,
+    )
     parser.add_argument(
         "--device",
         help=(
@@ -27,6 +33,13 @@ def main() -> None:
         ),
         default="cpu",
     )
+
+    parser.add_argument(
+        "--overrides",
+        help=("Can be used to pass values into override values in the input file."),
+        nargs="*",
+    )
+
     args = parser.parse_args()
 
     diffusion_solve(**vars(args))

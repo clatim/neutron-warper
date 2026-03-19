@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "h5py>=3.16.0",
     "omegaconf>=2.3.0",
     "plotly>=6.6.0",
     "pyvista>=0.47.0",
@@ -28,7 +29,6 @@ major_version_zero = true
 
 [dependency-groups]
 dev = [
-    "hypothesis>=6.151.9",
     "ipython>=9.10.0",
     "pytest>=9.0.2",
     "ruff>=0.15.5",
@@ -37,4 +37,4 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = '-ra'
+addopts = ['-ra', '--basetemp=tests/temp']

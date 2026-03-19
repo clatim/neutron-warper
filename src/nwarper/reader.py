@@ -8,9 +8,13 @@ from nwarper.region_builder import build_regions
 from nwarper.settings import Settings
 
 
-def read_problem(file):
+def read_problem(file, overrides=None):
     schema = OmegaConf.structured(Config)
-    cfg = OmegaConf.load(file)
+    base = OmegaConf.load(file)
+    if not overrides:
+        overrides = []
+    cli = OmegaConf.from_dotlist(overrides)
+    cfg = OmegaConf.merge(base, cli)
     OmegaConf.merge(schema, cfg)
 
     domain = NeutronProblem(
